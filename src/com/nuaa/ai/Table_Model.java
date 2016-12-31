@@ -11,7 +11,7 @@ public class Table_Model extends AbstractTableModel {
 	private Vector content = null;
 
 	//用于存储表格的表头;
-	private String[] title_name = { "姓名","年龄" };
+	private String[] title_name = { "用户ID","用户名称" };
 
 	//构造函数;
 	public Table_Model() {
