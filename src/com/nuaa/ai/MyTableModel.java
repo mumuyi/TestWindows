@@ -4,28 +4,30 @@ import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
 
-public class Table_Model extends AbstractTableModel {
+public class MyTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = -3094977414157589758L;
 
 	//用于存储表格中的显示的数据;
-	private Vector content = null;
+	private Vector<Vector<String>> content = null;
 
 	//用于存储表格的表头;
-	private String[] title_name = { "用户ID","用户名称" };
+	private String[] title_name;
 
 	//构造函数;
-	public Table_Model() {
-		content = new Vector();
+	public MyTableModel() {
+		content = new Vector<Vector<String>>();
 	}
 
 	//构造函数;
-	public Table_Model(int count) {
-		content = new Vector(count);
+	//需要传入表头;
+	public MyTableModel(String[] Titles,int count) {
+		title_name=Titles;
+		content = new Vector<Vector<String>>(count);
 	}
 
 	//加入一空行
 	public void addRow(int row) {
-		Vector v = new Vector(2);
+		Vector<String> v = new Vector<String>(2);
 		v.add(0, null);
 		v.add(1, null);
 		//v.add(2, null);
@@ -35,7 +37,7 @@ public class Table_Model extends AbstractTableModel {
 	
 	//加入一行内容
 	public void addRow(String name, String age) {
-		Vector v = new Vector(2);
+		Vector<String> v = new Vector<String>(2);
 
 		v.add(0, name);
 		//v.add(1, new Boolean(sex)); // JCheckBox是Boolean的默认显示组件，这里仅仅为了看效果，其实用JComboBox显示***更合适
