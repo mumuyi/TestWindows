@@ -114,10 +114,16 @@ public class MainWindows extends JFrame {
 					//int Ovaly=WindowsHeight/2;
 					//mw.Simulationsatellite(Ovalx,Ovaly,radii,0);
 
+					//≤‚ ‘±Ì∏Òœ‘ æ;
+					//StudentTableWindow stw=new StudentTableWindow();
+					//stw.iniTable();
+					//UserTableWindow utw=new UserTableWindow();
+					//utw.iniTable();
 					
-					MyThread2 myThread1;
-					myThread1=new MyThread2();
-					myThread1.start();
+					
+					//MyThread2 myThread1;
+					//myThread1=new MyThread2();
+					//myThread1.start();
 				}
 
 			}
