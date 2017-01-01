@@ -27,7 +27,7 @@ public class MyTableModel extends AbstractTableModel {
 	}
 
 	//加入一空行
-	public void addRow11(int row,List<String> list) {
+	public void addRow(int row,List<String> list) {
 		Vector v = new Vector(list.size());
 		for(int i=0;i<list.size();i++)
 			v.add(i, null);
@@ -43,7 +43,8 @@ public class MyTableModel extends AbstractTableModel {
 		for(int i=0;i<list.size();i++){
 			v.add(i, list.get(i));
 		}
-		//v.add(list.size(),"1");
+		//添加复选框,初始为未选中状态;
+		v.add(list.size(),new Boolean(false));
 		content.add(v);
 	}
 

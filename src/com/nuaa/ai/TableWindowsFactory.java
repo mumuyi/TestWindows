@@ -9,11 +9,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -25,12 +27,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-public class TableWindowsFactory implements ActionListener {
+public class TableWindowsFactory implements ActionListener ,MouseListener{
 
 	private JFrame frame = null;
 	private JTable table = null;
@@ -56,11 +60,15 @@ public class TableWindowsFactory implements ActionListener {
 	// 调用的类;
 	private Object object;
 	//搜索条件输入框;
-	TextField text;
+	private TextField text;
 	//搜索条件;
-	String searchCondition=null;
+	private String searchCondition=null;
 	// 特殊行数据;
-	List<Integer> specialrow = new ArrayList<>();
+	private List<Integer> specialrow = new ArrayList<>();
+	//表头;
+	private String[] TableTitles;
+	//需要删除的数据;
+	private List<Integer> delList=new ArrayList<Integer>();
 	// 构造函数;
 	/**
 	 * TableTitle 窗口名; TableTitles 表头; objectList 表中第一页的数据; formerObject
@@ -76,7 +84,8 @@ public class TableWindowsFactory implements ActionListener {
 		object = formerObject;
 		sqlList = objectList;
 		this.totalNum = totalNum;
-
+		this.TableTitles=TableTitles;
+		
 		// 初始化首页数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
@@ -107,8 +116,9 @@ public class TableWindowsFactory implements ActionListener {
 
 		// 给表格增加颜色;
 		makeFace(table, specialrow);
-		// 添加复选框;
-		// addCheckBox();
+		
+		//添加表格单元格点击事件;
+		table.addMouseListener(this);
 
 		// 将表格加入窗口中;
 		s_pan = new JScrollPane(table);
@@ -134,32 +144,6 @@ public class TableWindowsFactory implements ActionListener {
 		frame.setVisible(true);
 	}
 
-	// 添加复选框;
-	private void addCheckBox(JTable table) {
-		table.getColumnModel().getColumn(4).setCellRenderer(new TableCellRenderer() {
-
-			/*
-			 * (non-Javadoc) 此方法用于向方法调用者返回某一单元格的渲染器（即显示数据的组建--或控件） 可以为JCheckBox
-			 * JComboBox JTextArea 等
-			 */
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				// 创建用于返回的渲染组件
-				JCheckBox ck = new JCheckBox();
-				// 使具有焦点的行对应的复选框选中
-				// ck.setSelected(isSelected);
-				ck.setSelected(hasFocus);
-				// 设置单选
-				ck.setMultiClickThreshhold(20);
-				;
-				// 使复选框在单元格内居中显示
-				ck.setHorizontalAlignment((int) 0.5f);
-				return ck;
-			}
-		});
-	}
-
 	// 为表格上色;
 	private void makeFace(JTable table, List<Integer> specialrows) {
 		try {
@@ -170,10 +154,6 @@ public class TableWindowsFactory implements ActionListener {
 
 				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
 						boolean hasFocus, int row, int column) {
-
-					// 添加复选框;
-					// addCheckBox(table);
-
 					//设置cell 中的数据居中显示;
 					setHorizontalAlignment((int) 0.5f);
 					
@@ -201,7 +181,8 @@ public class TableWindowsFactory implements ActionListener {
 					return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 				}
 			};
-			for (int i = 0; i < table.getColumnCount(); i++) {
+			//在这里不做最后一项,在用最开始的方法即可设置成可选的复选框,但是依旧是没有上色的.
+			for (int i = 0; i < table.getColumnCount()-1; i++) {
 				table.getColumn(table.getColumnName(i)).setCellRenderer(tcr);
 			}
 
@@ -252,11 +233,17 @@ public class TableWindowsFactory implements ActionListener {
 		//text.setBounds(0, 0, 200, 5);
 		searchPanel.add(text);
 		
-		// 添加上一页按钮;
+		// 添加搜索按钮;
 		JButton searchButton = new JButton("Search");
 		searchButton.setActionCommand("Search");
 		searchButton.addActionListener(this);
 		searchPanel.add(searchButton);
+		
+		// 添加删除按钮;
+		JButton delButton = new JButton("Delect");
+		delButton.setActionCommand("delect");
+		delButton.addActionListener(this);
+		searchPanel.add(delButton, BorderLayout.WEST);
 		
 		// 将JPanel 添加到窗口中;
 		frame.add(searchPanel, BorderLayout.NORTH);
@@ -297,9 +284,25 @@ public class TableWindowsFactory implements ActionListener {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+		}else if(e.getActionCommand().equals("delect")){
+			System.out.println("在这里进行删除操作");
+			
+			//删除delList中的对应的sqlList中的对象;
+			for(int i=0;i<delList.size();i++){
+				MyHibernate.sqlDelete(sqlList.get(delList.get(i)));
+				System.out.println(""+delList.get(i));
+			}
+			
+			//更新表格;
+			try {
+				updateTable();
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
-
+	
 	// 数据更新操作;
 	private void updateTable() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		// 删除model中的之前的数据;
@@ -486,4 +489,57 @@ public class TableWindowsFactory implements ActionListener {
 			return fildeName;
 		}
 	}
+
+	//点击事件;
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		//获取行列;
+        int []columns = table.getSelectedColumns();
+        int column=columns[0];
+        int row = table.getSelectedRow();
+        //System.out.println("!!!!!!!!!!"+row+"      "+column);
+        //改变复选框的选择状态,并添加或删除delList中的数据;
+        if(column==TableTitles.length-1){
+        	if((Boolean)table.getValueAt(row, column)){
+        		table.setValueAt(false, row, column);
+        		
+				for(int i=0;i<delList.size();i++){
+				    if(delList.get(i)==row)
+				    	delList.remove(i);
+				}
+        		
+        	}
+        	else{
+        		table.setValueAt(true, row, column);
+        		delList.add(row);
+        	}
+        }
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 }
