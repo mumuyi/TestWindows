@@ -4,8 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,13 +17,17 @@ import java.util.Date;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumnModel;
 
 public class TableWindowsFactory implements ActionListener {
 
@@ -28,7 +35,7 @@ public class TableWindowsFactory implements ActionListener {
 	private JTable table = null;
 	private MyTableModel model = null;
 	private JScrollPane s_pan = null;
-	
+
 	// 翻页按钮;
 	private JButton nextPagebutton;
 	private JButton lastPagebutton;
@@ -36,31 +43,43 @@ public class TableWindowsFactory implements ActionListener {
 	private JLabel pageLabel;
 
 	// 数据库查询时,每次查询的最大数量;
-	private int maxLineATime = 2;
+	private int maxLineATime = 4;
 	// 当前页数;
 	private int currentPage = 0;
 	// 表中的数据的总的数量;
 	private long totalNum = 0;
 	// 暂存表中每一列的值;
 	private List<String> list;
-	//查询结果;
+	// 查询结果;
 	private List<?> sqlList;
-	//调用的类;
+	// 调用的类;
 	private Object object;
+	//搜索条件输入框;
+	TextField text;
+	//搜索条件;
+	String searchCondition=null;
+	// 特殊行数据;
+	List<Integer> specialrow = new ArrayList<>();
 	// 构造函数;
-	public TableWindowsFactory(String TableTitle,String[] TableTitles,List<?> objectList,Object formerObject,long totalnum) {
+	/**
+	 * TableTitle 窗口名; TableTitles 表头; objectList 表中第一页的数据; formerObject
+	 * 实例化本类的那个类,用来回调获取更新的数据; totalNum 表中的数据总数;
+	 * 
+	 */
+	public TableWindowsFactory(String TableTitle, String[] TableTitles, List<?> objectList, Object formerObject,
+			long totalNum) {
 		frame = new JFrame(TableTitle);
 		model = new MyTableModel(TableTitles, 20);
 		table = new JTable(model);
-		
-		object=formerObject;
-		sqlList=objectList;
-		totalNum = totalnum;
-		
-		//初始化首页数据;
+
+		object = formerObject;
+		sqlList = objectList;
+		this.totalNum = totalNum;
+
+		// 初始化首页数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
-				list=getObjectValue(sqlList.get(i));
+				list = getObjectValue(sqlList.get(i), i);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -68,54 +87,33 @@ public class TableWindowsFactory implements ActionListener {
 			model.addRow(list);
 		}
 
-		//特殊行数据;
-		List<Integer> specialrow = new ArrayList<>();
+
 		// 增加测试数据,测试表格中对特殊行显示特殊的颜色;
-		specialrow.add(0);
-		
+		// specialrow.add(0);
+
 		// 设置选中的行的颜色;
 		table.setSelectionBackground(new Color(189, 252, 201));
 		// 表格背景色
 		// table.setBackground(Color.yellow);
 		// 指定每一行的行高50;
 		table.setRowHeight(50);
-		// jt.setRowHeight(2, 30);//指定2行的高度30
-
+		// table.setRowHeight(2, 30);//指定2行的高度30
 
 		// 给表格增加颜色;
 		makeFace(table, specialrow);
+		// 添加复选框;
+		// addCheckBox();
 
 		// 将表格加入窗口中;
 		s_pan = new JScrollPane(table);
 		frame.add(s_pan);
 
-		// 创建JPanel;
-		JPanel buttonPanel = new JPanel();
-		buttonPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		// 添加上一页按钮;
-		lastPagebutton = new JButton("Last Page");
-		lastPagebutton.setActionCommand("LastPage");
-		lastPagebutton.addActionListener(this);
-		buttonPanel.add(lastPagebutton, BorderLayout.WEST);
-		// 添加页数信息;
-		pageLabel = new JLabel();
-		pageLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
-		if(totalNum % maxLineATime==0)
-			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime));
-		else
-			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime+1));
-		buttonPanel.add(pageLabel, BorderLayout.WEST);
-		// 添加下一页按钮;
-		nextPagebutton = new JButton("Next Page");
-		nextPagebutton.setActionCommand("NextPage");
-		nextPagebutton.addActionListener(this);
-		buttonPanel.add(nextPagebutton, BorderLayout.EAST);
-		// 将JPanel 添加到窗口中;
-		frame.add(buttonPanel, BorderLayout.SOUTH);
+		//添加按钮和页数信息;
+		addBotton();
 
-		// 第一页时设置上一页按钮不可用;
-		lastPagebutton.setEnabled(false);
-
+		//添加搜索框;
+		addSearch();
+		
 		// 设置窗口大小;
 		frame.setSize(600, 400);
 
@@ -126,12 +124,37 @@ public class TableWindowsFactory implements ActionListener {
 	}
 
 	// 显示窗口;
-	public void showTable(){
+	public void showTable() {
 		frame.setVisible(true);
 	}
-	
-	
-	// 这个方法可以考虑单独拿出来作为一个公共的方法;
+
+	// 添加复选框;
+	private void addCheckBox(JTable table) {
+		table.getColumnModel().getColumn(4).setCellRenderer(new TableCellRenderer() {
+
+			/*
+			 * (non-Javadoc) 此方法用于向方法调用者返回某一单元格的渲染器（即显示数据的组建--或控件） 可以为JCheckBox
+			 * JComboBox JTextArea 等
+			 */
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+				// 创建用于返回的渲染组件
+				JCheckBox ck = new JCheckBox();
+				// 使具有焦点的行对应的复选框选中
+				// ck.setSelected(isSelected);
+				ck.setSelected(hasFocus);
+				// 设置单选
+				ck.setMultiClickThreshhold(20);
+				;
+				// 使复选框在单元格内居中显示
+				ck.setHorizontalAlignment((int) 0.5f);
+				return ck;
+			}
+		});
+	}
+
+	// 为表格上色;
 	private void makeFace(JTable table, List<Integer> specialrows) {
 		try {
 			DefaultTableCellRenderer tcr = new DefaultTableCellRenderer() {
@@ -141,16 +164,21 @@ public class TableWindowsFactory implements ActionListener {
 
 				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
 						boolean hasFocus, int row, int column) {
+
+					// 添加复选框;
+					// addCheckBox(table);
+
 					// 设置相邻两行的颜色不同,方便用户查看;
 					if (row % 2 == 0) {
 						setBackground(Color.white); // 设置奇数行底色
 					} else if (row % 2 == 1) {
-						setBackground(new Color(206, 231, 255)); // 设置偶数行底色
+						setBackground(Color.GRAY); // 设置偶数行底色
 					}
 					// 如果需要设置某一个Cell颜色，需要加上column过滤条件即可
-					if (row == 1 && column == 1) {
-						setBackground(Color.YELLOW);
-					}
+					 if (searchCondition!=null&&value.toString().contains(searchCondition)&&column!=0) {
+						 setBackground(Color.YELLOW); 
+					 }
+					 
 					// 设置特定行的颜色;将所有需要特殊化处理的行号加入specialrow
 					// 中,之后再判断当前处理的行号是否包含在specialrow 中即可;
 					if (specialrow.contains(row)) {
@@ -167,12 +195,66 @@ public class TableWindowsFactory implements ActionListener {
 			for (int i = 0; i < table.getColumnCount(); i++) {
 				table.getColumn(table.getColumnName(i)).setCellRenderer(tcr);
 			}
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 
 	}
 
+	
+	//添加按钮和页数;
+	private void addBotton(){
+		// 创建JPanel;
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		// 添加上一页按钮;
+		lastPagebutton = new JButton("Last Page");
+		lastPagebutton.setActionCommand("LastPage");
+		lastPagebutton.addActionListener(this);
+		buttonPanel.add(lastPagebutton, BorderLayout.WEST);
+		// 添加页数信息;
+		pageLabel = new JLabel();
+		pageLabel.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
+		if (totalNum % maxLineATime == 0)
+			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime));
+		else
+			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime + 1));
+		buttonPanel.add(pageLabel, BorderLayout.WEST);
+		// 添加下一页按钮;
+		nextPagebutton = new JButton("Next Page");
+		nextPagebutton.setActionCommand("NextPage");
+		nextPagebutton.addActionListener(this);
+		buttonPanel.add(nextPagebutton, BorderLayout.EAST);
+		// 将JPanel 添加到窗口中;
+		frame.add(buttonPanel, BorderLayout.SOUTH);
+
+		// 第一页时设置上一页按钮不可用;
+		lastPagebutton.setEnabled(false);
+	}
+	
+	private void addSearch(){
+		// 创建JPanel;
+		JPanel searchPanel = new JPanel();
+		searchPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		
+		//添加输入框;
+		text = new TextField();
+		//text.setBounds(0, 0, 200, 5);
+		searchPanel.add(text);
+		
+		// 添加上一页按钮;
+		JButton searchButton = new JButton("Search");
+		searchButton.setActionCommand("Search");
+		searchButton.addActionListener(this);
+		searchPanel.add(searchButton);
+		
+		// 将JPanel 添加到窗口中;
+		frame.add(searchPanel, BorderLayout.NORTH);
+	}
+	
+	
+	
 	// 鼠标监听事件;
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -195,6 +277,17 @@ public class TableWindowsFactory implements ActionListener {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+		} else if (e.getActionCommand().equals("Search")) {
+			System.out.println("在这里进行搜索");
+			searchCondition=text.getText();
+			// 给表格增加颜色;
+			makeFace(table, specialrow);
+			try {
+				updateTable();
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
 
@@ -207,8 +300,8 @@ public class TableWindowsFactory implements ActionListener {
 		}
 		// 重新查询;
 		try {
-			Method m = (Method) object.getClass().getMethod("update",int.class,int.class);
-			sqlList=(List<?>)m.invoke(object,currentPage * maxLineATime, maxLineATime);
+			Method m = (Method) object.getClass().getMethod("update", int.class, int.class);
+			sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime);
 		} catch (NoSuchMethodException | SecurityException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -216,7 +309,7 @@ public class TableWindowsFactory implements ActionListener {
 		// 给model写入新的数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
-				list=getObjectValue(sqlList.get(i));
+				list = getObjectValue(sqlList.get(i), i);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -230,10 +323,10 @@ public class TableWindowsFactory implements ActionListener {
 		buttonClickableChange();
 
 		// 更新页数信息;
-		if(totalNum % maxLineATime==0)
+		if (totalNum % maxLineATime == 0)
 			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime));
 		else
-			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime+1));
+			pageLabel.setText("" + (currentPage + 1) + "/" + (totalNum / maxLineATime + 1));
 	}
 
 	// 设置翻页按钮是否可点击;
@@ -254,16 +347,21 @@ public class TableWindowsFactory implements ActionListener {
 		}
 	}
 
-	private List<String> getObjectValue(Object object) throws Exception {
-		List<String> list=new ArrayList<>();
+	// 通过返回获取Object 的具体值;
+	private List<String> getObjectValue(Object object, int i) throws Exception {
+		List<String> list = new ArrayList<>();
 		if (object != null) {
+
+			// 添加编号;
+			list.add("" + (i + 1 + currentPage * maxLineATime));
+
 			// 拿到该类
 			Class<?> clz = object.getClass();
 			// 获取实体类的所有属性，返回Field数组
 			Field[] fields = clz.getDeclaredFields();
-			
+
 			for (Field field : fields) {
-				//System.out.println(field.getGenericType());// 打印该类的所有属性类型
+				// System.out.println(field.getGenericType());// 打印该类的所有属性类型
 
 				// 如果类型是String
 				if (field.getGenericType().toString().equals("class java.lang.String")) { // 如果type是类类型，则前面包含"class
@@ -278,12 +376,12 @@ public class TableWindowsFactory implements ActionListener {
 
 					String val = (String) m.invoke(object);// 调用getter方法获取属性值
 					if (val != null) {
-						//System.out.println("String type:" + val);
+						// System.out.println("String type:" + val);
 						list.add(val);
-					}else{
+					} else {
 						list.add("");
 					}
-					
+
 				}
 
 				// 如果类型是Integer
@@ -291,9 +389,9 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
 					Integer val = (Integer) m.invoke(object);
 					if (val != null) {
-						//System.out.println("Integer type:" + val);
+						// System.out.println("Integer type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 
@@ -304,9 +402,9 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
 					Double val = (Double) m.invoke(object);
 					if (val != null) {
-						//System.out.println("Double type:" + val);
+						// System.out.println("Double type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 
@@ -317,9 +415,9 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod(field.getName());
 					Boolean val = (Boolean) m.invoke(object);
 					if (val != null) {
-						//System.out.println("Boolean type:" + val);
+						// System.out.println("Boolean type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 
@@ -331,9 +429,9 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod(field.getName());
 					Boolean val = (Boolean) m.invoke(object);
 					if (val != null) {
-						//System.out.println("boolean type:" + val);
+						// System.out.println("boolean type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 
@@ -343,9 +441,9 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
 					Date val = (Date) m.invoke(object);
 					if (val != null) {
-						//System.out.println("Date type:" + val);
+						// System.out.println("Date type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 
@@ -355,27 +453,27 @@ public class TableWindowsFactory implements ActionListener {
 					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
 					Short val = (Short) m.invoke(object);
 					if (val != null) {
-						//System.out.println("Short type:" + val);
+						// System.out.println("Short type:" + val);
 						list.add(val.toString());
-					}else{
+					} else {
 						list.add("");
 					}
 				}
 				// 如果还需要其他的类型请自己做扩展
 			}
-		}else{
+		} else {
 			System.err.println("object is null");
 		}
 		return list;
 	}
 
-	// 把一个字符串的第一个字母大写、效率是最高的、
+	// 把一个字符串的第一个字母大写;
 	private static String getMethodName(String fildeName) throws Exception {
-		if(fildeName.charAt(0)>='a'&&fildeName.charAt(0)<='z'){
+		if (fildeName.charAt(0) >= 'a' && fildeName.charAt(0) <= 'z') {
 			byte[] items = fildeName.getBytes();
 			items[0] = (byte) ((char) items[0] - 'a' + 'A');
 			return new String(items);
-		}else{
+		} else {
 			return fildeName;
 		}
 	}

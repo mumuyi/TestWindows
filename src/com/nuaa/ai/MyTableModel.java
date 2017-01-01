@@ -9,26 +9,26 @@ public class MyTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = -3094977414157589758L;
 
 	//用于存储表格中的显示的数据;
-	private Vector<Vector<String>> content = null;
+	private Vector content = null;
 
 	//用于存储表格的表头;
 	private String[] title_name;
 
 	//构造函数;
 	public MyTableModel() {
-		content = new Vector<Vector<String>>();
+		content = new Vector();
 	}
 
 	//构造函数;
 	//需要传入表头;
 	public MyTableModel(String[] Titles,int count) {
 		title_name=Titles;
-		content = new Vector<Vector<String>>(count);
+		content = new Vector(count);
 	}
 
 	//加入一空行
 	public void addRow11(int row,List<String> list) {
-		Vector<String> v = new Vector<String>(list.size());
+		Vector v = new Vector(list.size());
 		for(int i=0;i<list.size();i++)
 			v.add(i, null);
 		content.add(row, v);
@@ -37,14 +37,13 @@ public class MyTableModel extends AbstractTableModel {
 	
 	//加入一行内容
 	public void addRow(List<String> list) {
-		Vector<String> v = new Vector<String>(list.size()+1);
-
+		Vector v = new Vector(list.size()+1);
+		
+		//加入其他数据;
 		for(int i=0;i<list.size();i++){
 			v.add(i, list.get(i));
 		}
-		//v.add(1, new Boolean(sex)); // JCheckBox是Boolean的默认显示组件，这里仅仅为了看效果，其实用JComboBox显示***更合适
-		//v.add(1, age); // 本列在前面已经设置成了JComboBox组件，这里随便输入什么字符串都没关系
-
+		//v.add(list.size(),"1");
 		content.add(v);
 	}
 
