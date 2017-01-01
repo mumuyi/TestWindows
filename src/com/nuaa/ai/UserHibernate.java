@@ -3,11 +3,9 @@ package com.nuaa.ai;
 import java.util.Iterator;
 import java.util.List;
 
-import org.hibernate.Criteria;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.criterion.Projections;
 import org.hibernate.SessionFactory;
 
 public class UserHibernate {
