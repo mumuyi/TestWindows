@@ -36,6 +36,10 @@ import org.jfree.ui.RefineryUtilities;
  */
 public class DynamicData extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1787141432958166577L;
 	private static DemoPanel demoPanel;
 
 	/**
@@ -62,6 +66,11 @@ public class DynamicData extends JFrame {
 	}
 
 	static class DemoPanel extends JPanel implements ActionListener {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 3280064875986207615L;
 
 		/** The time series data. */
 		private TimeSeries series;
