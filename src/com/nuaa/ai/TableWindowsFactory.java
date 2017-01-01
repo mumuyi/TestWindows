@@ -27,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 public class TableWindowsFactory implements ActionListener {
@@ -87,6 +88,11 @@ public class TableWindowsFactory implements ActionListener {
 			model.addRow(list);
 		}
 
+		//设置第一列行号的宽度为固定值;
+		TableColumn firsetColumn = table.getColumnModel().getColumn(0);
+		firsetColumn.setPreferredWidth(30);
+		firsetColumn.setMaxWidth(30);
+		firsetColumn.setMinWidth(30);
 
 		// 增加测试数据,测试表格中对特殊行显示特殊的颜色;
 		// specialrow.add(0);
@@ -168,6 +174,9 @@ public class TableWindowsFactory implements ActionListener {
 					// 添加复选框;
 					// addCheckBox(table);
 
+					//设置cell 中的数据居中显示;
+					setHorizontalAlignment((int) 0.5f);
+					
 					// 设置相邻两行的颜色不同,方便用户查看;
 					if (row % 2 == 0) {
 						setBackground(Color.white); // 设置奇数行底色
