@@ -120,6 +120,13 @@ public class MainWindows extends JFrame {
 					//UserTableWindow utw=new UserTableWindow();
 					//utw.iniTable();
 					
+					//数据库测试;
+					//User user=new User();
+					//user.setUserId("1111");
+					//user.setUserName("王二二二");
+					//user.setUserPhone("1234455667");
+					//MyHibernate.sqlSaveOrUpdate(user);
+					//MyHibernate.sqlDelete(user);
 					
 					//MyThread2 myThread1;
 					//myThread1=new MyThread2();

@@ -9,7 +9,7 @@ import org.hibernate.SessionFactory;
 
 public class MyHibernate {
 
-	public static List<?> UserQuery(int from,int max,String com) {
+	public static List<?> sqlQuery(int from,int max,String com) {
 
 		Configuration cfg = new Configuration();
 		// cfg.configure();可带参数指定配置文件.返回值还是一个configuration 但是其拥有了配置选项;
@@ -22,9 +22,9 @@ public class MyHibernate {
 		// 参数是一个字符串,是HQL的查询语句.注意此时的的UserU为大写,为对象的,而不是表的.
 		Query query = session.createQuery(com);
 		
-        //从第一个开始查起.可以设置从第几个查起.
+        //从第一个开始查起.可以设置从第几个查起;
         query.setFirstResult(from);
-        //最大条数为两个
+        //最大条数;
         query.setMaxResults(max);
 		
 		// 使用List方法.
@@ -44,7 +44,7 @@ public class MyHibernate {
 		return userList;
 	}
 	
-	public static long UserGetRecordNum(String com){
+	public static long sqlGetRecordNum(String com){
 		Configuration cfg = new Configuration();
 		// cfg.configure();可带参数指定配置文件.返回值还是一个configuration 但是其拥有了配置选项;
 		SessionFactory sf = cfg.configure().buildSessionFactory();
@@ -64,4 +64,36 @@ public class MyHibernate {
 		//criteria.setProjection(Projections.rowCount());
 		//return criteria.list().size();
 	}
+	
+	public static void sqlSaveOrUpdate(Object object){
+		Configuration cfg = new Configuration();
+		// cfg.configure();可带参数指定配置文件.返回值还是一个configuration 但是其拥有了配置选项;
+		SessionFactory sf = cfg.configure().buildSessionFactory();
+		// 打开session;
+		Session session = sf.openSession();
+		// 开始事务;
+		session.beginTransaction();
+		session.saveOrUpdate(object);
+		// 获取事务并提交;
+		session.getTransaction().commit();
+		//关闭;
+		session.close();
+		sf.close();
+	}
+	
+	public static void sqlDelete(Object object){
+		Configuration cfg = new Configuration();
+		// cfg.configure();可带参数指定配置文件.返回值还是一个configuration 但是其拥有了配置选项;
+		SessionFactory sf = cfg.configure().buildSessionFactory();
+		// 打开session;
+		Session session = sf.openSession();
+		// 开始事务;
+		session.beginTransaction();
+		session.delete(object);
+		// 获取事务并提交;
+		session.getTransaction().commit();
+		//关闭;
+		session.close();
+		sf.close();
+	} 
 }
