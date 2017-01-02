@@ -2,8 +2,8 @@ package com.nuaa.ai;
 
 public class User {
 	
-	private String userName;
 	private String userId;
+	private String userName;
 	private String userPhone;
 	
 	
