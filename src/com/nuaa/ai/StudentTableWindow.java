@@ -2,7 +2,7 @@ package com.nuaa.ai;
 
 import java.util.List;
 
-public class StudentTableWindow implements TableWindowInterface{
+public class StudentTableWindow implements TableWindows{
 	// 数据库查询时,每次查询的最大数量;
 	private int maxLineATime = 4;
 
