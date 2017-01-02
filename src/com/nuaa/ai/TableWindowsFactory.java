@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.lang.reflect.Field;
@@ -65,7 +66,14 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 	private List<Integer> delList = new ArrayList<Integer>();
 	// 下拉选择框;
 	private Choice choice;
-
+	//具体实体类的成员变量的名字,用于后面的排序时的重新查询;
+	private List<String> entryClassMemberName=new ArrayList<String>();
+	//记录entryClassMemberName 是否已被初始化过;
+	private Boolean isentryClassMemberName=false;
+	//记录按照第几个排序;
+	private int OrderByNum=0;
+	//记录正向排序或逆向排序;
+	private int[] orderDirection=new int[20];
 	// 构造函数;
 	/**
 	 * TableTitle 窗口名; TableTitles 表头; objectList 表中第一页的数据; formerObject
@@ -73,7 +81,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 	 * 
 	 */
 	public TableWindowsFactory(String TableTitle, String[] TableTitles, List<?> objectList, Object formerObject,
-			long totalNum) {
+			long totalNum,int maxLineATime) {
 		frame = new JFrame(TableTitle);
 		model = new MyTableModel(TableTitles, 20);
 		table = new JTable(model);
@@ -82,6 +90,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		sqlList = objectList;
 		this.totalNum = totalNum;
 		this.TableTitles = TableTitles;
+		this.maxLineATime=maxLineATime;
 
 		// 初始化首页数据;
 		for (int i = 0; i < sqlList.size(); i++) {
@@ -94,6 +103,11 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			model.addRow(list);
 		}
 
+		//初始化排序的方向;
+		for(int i=0;i<TableTitle.length();i++){
+			orderDirection[i]=0;
+		}
+		
 		// 设置第一列行号的宽度为固定值;
 		TableColumn firsetColumn = table.getColumnModel().getColumn(0);
 		firsetColumn.setPreferredWidth(30);
@@ -123,6 +137,27 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		// 添加表格单元格点击事件;
 		table.addMouseListener(this);
 
+		//添加表头点击事件;
+		//在这里添加的原因是,怕和单元格单击事件发生冲突;而且table或者是TableHeader 无法设置ActionCommond;
+        table.getTableHeader().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                //table.setRowSelectionAllowed(true);
+            	OrderByNum=table.columnAtPoint(e.getPoint());
+                System.out.println("TableHeader Click"+table.columnAtPoint(e.getPoint()));
+                //更新方向;
+                orderDirection[OrderByNum]=(orderDirection[OrderByNum]+1)%2;
+                //更新表格数据;
+                try {
+					updateTable();
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+            }
+        });
+		
+		
 		// 将表格加入窗口中;
 		s_pan = new JScrollPane(table);
 		frame.add(s_pan);
@@ -237,6 +272,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			nextPagebutton.setEnabled(false);
 	}
 
+	//添加搜索输入框,搜索按钮,下拉选择框,删除按钮;
 	private void addSearch() {
 		// 创建JPanel;
 		JPanel searchPanel = new JPanel();
@@ -329,7 +365,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		}
 	}
 
-	// 点击事件;
+	// 单元格点击事件;
 	@Override
 	public void mouseClicked(MouseEvent e) {
 		// TODO Auto-generated method stub
@@ -337,7 +373,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		int[] columns = table.getSelectedColumns();
 		int column = columns[0];
 		int row = table.getSelectedRow();
-		// System.out.println("!!!!!!!!!!"+row+" "+column);
+		//System.out.println("!!!!!!!!!!"+row+" "+column);
 		// 改变复选框的选择状态,并添加或删除delList中的数据;
 		if (column == TableTitles.length - 1) {
 			// 选中->未选中;
@@ -365,14 +401,33 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			// 这里每次都是删除第0个;因为底层的代码在删除之后做了移位了;所以每次都删第一个,一共删除list.size()次就好了;
 			model.removeRow(0);
 		}
+		
+		
+		
 		// 重新查询;
-		try {
-			Method m = (Method) object.getClass().getMethod("update", int.class, int.class);
-			sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime);
-		} catch (NoSuchMethodException | SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		// 存储顺序;
+		if(OrderByNum==0||OrderByNum==TableTitles.length-1){
+			try {
+				Method m = (Method) object.getClass().getMethod("update", int.class, int.class);
+				sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime);
+			} catch (NoSuchMethodException | SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		//自定义顺序;
+		else{
+			try {
+				Method m = (Method) object.getClass().getMethod("update", int.class, int.class,int.class,String.class);
+				sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime,orderDirection[OrderByNum],entryClassMemberName.get(OrderByNum-1));
+			} catch (NoSuchMethodException | SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		
+		
 		// 给model写入新的数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
@@ -429,7 +484,10 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 
 			for (Field field : fields) {
 				// System.out.println(field.getGenericType());// 打印该类的所有属性类型
-
+				//记录每一个属性的名称,用来做后面的排序查询;
+				if(!isentryClassMemberName){
+					entryClassMemberName.add(field.getName());
+				}
 				// 如果类型是String
 				if (field.getGenericType().toString().equals("class java.lang.String")) { // 如果type是类类型，则前面包含"class
 																							// "，后面跟类名
@@ -528,6 +586,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 				}
 				// 如果还需要其他的类型请自己做扩展
 			}
+			isentryClassMemberName=true;
 		} else {
 			System.err.println("object is null");
 		}
