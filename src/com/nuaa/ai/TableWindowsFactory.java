@@ -11,11 +11,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -39,63 +36,121 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 	// 翻页按钮;
 	private JButton nextPagebutton;
 	private JButton lastPagebutton;
-	// 页数信息;
+	// 页数信息标签;
 	private JLabel pageLabel;
-
-	// 数据库查询时,每次查询的最大数量;
-	private int maxLineATime = 4;
-	// 当前页数;
-	private int currentPage = 0;
-	// 表中的数据的总的数量;
-	private long totalNum = 0;
+	// 搜索条件输入框;
+	private TextField text;
+	// 下拉选择框;
+	private Choice choice;
+	
 	// 暂存表中每一列的值;
 	private List<String> list;
 	// 查询结果;
 	private List<?> sqlList;
-	// 调用的类;
-	private Object object;
-	// 搜索条件输入框;
-	private TextField text;
-	// 搜索条件;
-	private String searchCondition = null;
 	// 特殊行数据;
 	private List<Integer> specialrow = new ArrayList<>();
-	// 表头;
-	private String[] TableTitles;
 	// 需要删除的数据;
 	private List<Integer> delList = new ArrayList<Integer>();
-	// 下拉选择框;
-	private Choice choice;
-	//具体实体类的成员变量的名字,用于后面的排序时的重新查询;
-	private List<String> entryClassMemberName=new ArrayList<String>();
-	//记录entryClassMemberName 是否已被初始化过;
-	private Boolean isentryClassMemberName=false;
-	//记录按照第几个排序;
-	private int OrderByNum=0;
-	//记录正向排序或逆向排序;
-	private int[] orderDirection=new int[20];
+	// 具体实体类的成员变量的名字,用于后面的排序时的重新查询;
+	private List<String> entryClassMemberName = new ArrayList<String>();
+
+	// 表头;
+	private String[] TableTitles;
+
+	// 记录表头名称;
+	private String TableTitle = "Test Table";
+	// 具体实体类的名字;
+	private String EntityClassName;
+	// 搜索条件;
+	private String searchCondition = null;
+	
+	// 表中的数据的总的数量;
+	private long totalNum = 0;
+	// 记录正向排序或逆向排序;
+	private int[] orderDirection = new int[22];
+	//窗口的宽;
+	private int TableWindowsWidth=600;
+	//窗口的高;
+	private int TableWindowsHeight=400;
+	// 数据库查询时,每次查询的最大数量;
+	private int maxLineATime = 4;
+	// 当前页数;
+	private int currentPage = 0;
+	// 记录按照第几个排序;
+	private int OrderByNum = 0;
 	// 构造函数;
 	/**
 	 * TableTitle 窗口名; TableTitles 表头; objectList 表中第一页的数据; formerObject
 	 * 实例化本类的那个类,用来回调获取更新的数据; totalNum 表中的数据总数;
 	 * 
 	 */
-	public TableWindowsFactory(String TableTitle, String[] TableTitles, List<?> objectList, Object formerObject,
-			long totalNum,int maxLineATime) {
-		frame = new JFrame(TableTitle);
-		model = new MyTableModel(TableTitles, 20);
-		table = new JTable(model);
+	public TableWindowsFactory(String entityClassName,String [] tableTitles) {
+		EntityClassName=entityClassName;
+		TableTitles=new String[tableTitles.length+2];
+		TableTitles[0]="编号";
+		for(int i=0;i<tableTitles.length;i++)
+			TableTitles[i+1] = tableTitles[i];
+		TableTitles[tableTitles.length+1]="选择";
+	}
 
-		object = formerObject;
-		sqlList = objectList;
-		this.totalNum = totalNum;
-		this.TableTitles = TableTitles;
-		this.maxLineATime=maxLineATime;
+	// 显示窗口;
+	public Boolean showTable() {
+		//判断类名是否为空;
+		if(EntityClassName==null){
+			JOptionPane.showMessageDialog(null,"查询失败", "具体实体类名为空",JOptionPane.ERROR_MESSAGE);
+			return false;
+		}else{
+			//初始化数据;
+			iniDate();
+			// 初始化Frame;
+			iniFrame();
+			// 初始化表格;
+			iniTable();
+			// 添加按钮和页数信息;
+			addBotton();
+			// 添加搜索框;
+			addSearch();
+			//显示窗口;
+			frame.setVisible(true);
+			return true;
+		}
+	}
+	
+	//初始化首页数据;
+	private void iniDate(){
+		sqlList=MyHibernate.sqlQuery(0, maxLineATime,"from "+EntityClassName);
+		totalNum=MyHibernate.sqlGetRecordNum("select count(*) from "+EntityClassName);
+		//无数据;
+		if(sqlList.size()==0){
+			JOptionPane.showMessageDialog(null,"查询失败", "表中数据为空",JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		entryClassMemberName=MyObjectUtils.getAttributeName(sqlList.get(0));
+	}
+	//初始化Frame;
+	private void iniFrame() {
+		frame = new JFrame(TableTitle);
+		// 设置窗口大小;
+		frame.setSize(TableWindowsWidth, TableWindowsHeight);
+
+		// 设置JFrame 窗口关闭事件;
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		// 设置JFrame 窗口出现位置;这里设置其显示在屏幕中间;
+		frame.setLocationRelativeTo(null);
+	}
+	//初始化Table;
+	private void iniTable() {
+		model = new MyTableModel(TableTitles, 22);
+		table = new JTable(model);
 
 		// 初始化首页数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
-				list = getObjectValue(sqlList.get(i), i);
+				// 添加编号;
+				list=new ArrayList<String>();
+				list.add("" + (i + 1 + currentPage * maxLineATime));
+				//获取一条数据;
+				MyObjectUtils.getObjectValue(sqlList.get(i),list);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -103,11 +158,11 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			model.addRow(list);
 		}
 
-		//初始化排序的方向;
-		for(int i=0;i<TableTitle.length();i++){
-			orderDirection[i]=0;
+		// 初始化排序的方向;
+		for (int i = 0; i < TableTitles.length; i++) {
+			orderDirection[i] = 0;
 		}
-		
+
 		// 设置第一列行号的宽度为固定值;
 		TableColumn firsetColumn = table.getColumnModel().getColumn(0);
 		firsetColumn.setPreferredWidth(30);
@@ -137,51 +192,30 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		// 添加表格单元格点击事件;
 		table.addMouseListener(this);
 
-		//添加表头点击事件;
-		//在这里添加的原因是,怕和单元格单击事件发生冲突;而且table或者是TableHeader 无法设置ActionCommond;
-        table.getTableHeader().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                //table.setRowSelectionAllowed(true);
-            	OrderByNum=table.columnAtPoint(e.getPoint());
-                System.out.println("TableHeader Click"+table.columnAtPoint(e.getPoint()));
-                //更新方向;
-                orderDirection[OrderByNum]=(orderDirection[OrderByNum]+1)%2;
-                //更新表格数据;
-                try {
+		// 添加表头点击事件;
+		// 在这里添加的原因是,怕和单元格单击事件发生冲突;而且table或者是TableHeader 无法设置ActionCommond;
+		table.getTableHeader().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// table.setRowSelectionAllowed(true);
+				OrderByNum = table.columnAtPoint(e.getPoint());
+				System.out.println("TableHeader Click" + table.columnAtPoint(e.getPoint()));
+				// 更新方向;
+				orderDirection[OrderByNum] = (orderDirection[OrderByNum] + 1) % 2;
+				// 更新表格数据;
+				try {
 					updateTable();
 				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-            }
-        });
-		
-		
+			}
+		});
+
 		// 将表格加入窗口中;
 		s_pan = new JScrollPane(table);
 		frame.add(s_pan);
-
-		// 添加按钮和页数信息;
-		addBotton();
-
-		// 添加搜索框;
-		addSearch();
-
-		// 设置窗口大小;
-		frame.setSize(600, 400);
-
-		// 设置JFrame 窗口关闭事件;
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		// 设置JFrame 窗口出现位置;这里设置其显示在屏幕中间;
-		frame.setLocationRelativeTo(null);
 	}
-
-	// 显示窗口;
-	public void showTable() {
-		frame.setVisible(true);
-	}
-
 	// 为表格上色;
 	private void makeFace(JTable table, List<Integer> specialrows) {
 		try {
@@ -204,9 +238,8 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 					// 搜索;
 					// 当前单元格包含所有字段;除去了编号和复选框字段;
 					// 如果搜索的条件是空的话,直接显示,不上特殊的颜色;
-					if (searchCondition != null && !searchCondition.isEmpty() 
-							&& column != 0&& column != TableTitles.length 
-							&& value.toString().contains(searchCondition)) {
+					if (searchCondition != null && !searchCondition.isEmpty() && column != 0
+							&& column != TableTitles.length && value.toString().contains(searchCondition)) {
 						// 列选条件;
 						// System.out.println(""+choice.getSelectedIndex()+"
 						// "+column);
@@ -272,7 +305,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			nextPagebutton.setEnabled(false);
 	}
 
-	//添加搜索输入框,搜索按钮,下拉选择框,删除按钮;
+	// 添加搜索输入框,搜索按钮,下拉选择框,删除按钮;
 	private void addSearch() {
 		// 创建JPanel;
 		JPanel searchPanel = new JPanel();
@@ -345,15 +378,16 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		} else if (e.getActionCommand().equals("delect")) {
 			System.out.println("在这里进行删除操作");
 
-			//添加一个确认框;
-			int option=JOptionPane.showConfirmDialog( null , "确定删除选择的 "+delList.size()+" 条数据吗" , "提示", JOptionPane.YES_NO_OPTION ) ;
-			if(option==0){
+			// 添加一个确认框;
+			int option = JOptionPane.showConfirmDialog(null, "确定删除选择的 " + delList.size() + " 条数据吗", "提示",
+					JOptionPane.YES_NO_OPTION);
+			if (option == 0) {
 				// 删除delList中的对应的sqlList中的对象;
 				for (int i = 0; i < delList.size(); i++) {
 					MyHibernate.sqlDelete(sqlList.get(delList.get(i)));
 					System.out.println("" + delList.get(i));
 				}
-	
+
 				// 更新表格;
 				try {
 					updateTable();
@@ -361,7 +395,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-			}			
+			}
 		}
 	}
 
@@ -373,7 +407,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		int[] columns = table.getSelectedColumns();
 		int column = columns[0];
 		int row = table.getSelectedRow();
-		//System.out.println("!!!!!!!!!!"+row+" "+column);
+		// System.out.println("!!!!!!!!!!"+row+" "+column);
 		// 改变复选框的选择状态,并添加或删除delList中的数据;
 		if (column == TableTitles.length - 1) {
 			// 选中->未选中;
@@ -401,37 +435,26 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			// 这里每次都是删除第0个;因为底层的代码在删除之后做了移位了;所以每次都删第一个,一共删除list.size()次就好了;
 			model.removeRow(0);
 		}
-		
-		
-		
+
 		// 重新查询;
 		// 存储顺序;
-		if(OrderByNum==0||OrderByNum==TableTitles.length-1){
-			try {
-				Method m = (Method) object.getClass().getMethod("update", int.class, int.class);
-				sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime);
-			} catch (NoSuchMethodException | SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		if (OrderByNum == 0 || OrderByNum == TableTitles.length - 1) {
+			sqlList = update(currentPage * maxLineATime, maxLineATime);
 		}
-		//自定义顺序;
-		else{
-			try {
-				Method m = (Method) object.getClass().getMethod("update", int.class, int.class,int.class,String.class);
-				sqlList = (List<?>) m.invoke(object, currentPage * maxLineATime, maxLineATime,orderDirection[OrderByNum],entryClassMemberName.get(OrderByNum-1));
-			} catch (NoSuchMethodException | SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		// 自定义顺序;
+		else {
+			sqlList = update(currentPage * maxLineATime, maxLineATime, orderDirection[OrderByNum],
+					entryClassMemberName.get(OrderByNum - 1));
 		}
-		
-		
-		
+
 		// 给model写入新的数据;
 		for (int i = 0; i < sqlList.size(); i++) {
 			try {
-				list = getObjectValue(sqlList.get(i), i);
+				// 添加编号;
+				list=new ArrayList<String>();
+				list.add("" + (i + 1 + currentPage * maxLineATime));
+				//获取一条数据;
+				MyObjectUtils.getObjectValue(sqlList.get(i),list);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -469,141 +492,44 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 		}
 	}
 
-	// 通过返回获取Object 的具体值;
-	private List<String> getObjectValue(Object object, int i) throws Exception {
-		List<String> list = new ArrayList<>();
-		if (object != null) {
+	
 
-			// 添加编号;
-			list.add("" + (i + 1 + currentPage * maxLineATime));
-
-			// 拿到该类
-			Class<?> clz = object.getClass();
-			// 获取实体类的所有属性，返回Field数组
-			Field[] fields = clz.getDeclaredFields();
-
-			for (Field field : fields) {
-				// System.out.println(field.getGenericType());// 打印该类的所有属性类型
-				//记录每一个属性的名称,用来做后面的排序查询;
-				if(!isentryClassMemberName){
-					entryClassMemberName.add(field.getName());
-				}
-				// 如果类型是String
-				if (field.getGenericType().toString().equals("class java.lang.String")) { // 如果type是类类型，则前面包含"class
-																							// "，后面跟类名
-					// 拿到该属性的gettet方法
-					/**
-					 * 这里需要说明一下：他是根据拼凑的字符来找你写的getter方法的
-					 * 在Boolean值的时候是isXXX（默认使用ide生成getter的都是isXXX）
-					 * 如果出现NoSuchMethod异常 就说明它找不到那个gettet方法 需要做个规范
-					 */
-					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
-
-					String val = (String) m.invoke(object);// 调用getter方法获取属性值
-					if (val != null) {
-						// System.out.println("String type:" + val);
-						list.add(val);
-					} else {
-						list.add("");
-					}
-
-				}
-
-				// 如果类型是Integer
-				if (field.getGenericType().toString().equals("class java.lang.Integer")) {
-					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
-					Integer val = (Integer) m.invoke(object);
-					if (val != null) {
-						// System.out.println("Integer type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-
-				}
-
-				// 如果类型是Double
-				if (field.getGenericType().toString().equals("class java.lang.Double")) {
-					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
-					Double val = (Double) m.invoke(object);
-					if (val != null) {
-						// System.out.println("Double type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-
-				}
-
-				// 如果类型是Boolean 是封装类
-				if (field.getGenericType().toString().equals("class java.lang.Boolean")) {
-					Method m = (Method) object.getClass().getMethod(field.getName());
-					Boolean val = (Boolean) m.invoke(object);
-					if (val != null) {
-						// System.out.println("Boolean type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-
-				}
-
-				// 如果类型是boolean 基本数据类型不一样 这里有点说名如果定义名是 isXXX的 那就全都是isXXX的
-				// 反射找不到getter的具体名
-				if (field.getGenericType().toString().equals("boolean")) {
-					Method m = (Method) object.getClass().getMethod(field.getName());
-					Boolean val = (Boolean) m.invoke(object);
-					if (val != null) {
-						// System.out.println("boolean type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-
-				}
-				// 如果类型是Date
-				if (field.getGenericType().toString().equals("class java.util.Date")) {
-					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
-					Date val = (Date) m.invoke(object);
-					if (val != null) {
-						// System.out.println("Date type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-
-				}
-				// 如果类型是Short
-				if (field.getGenericType().toString().equals("class java.lang.Short")) {
-					Method m = (Method) object.getClass().getMethod("get" + getMethodName(field.getName()));
-					Short val = (Short) m.invoke(object);
-					if (val != null) {
-						// System.out.println("Short type:" + val);
-						list.add(val.toString());
-					} else {
-						list.add("");
-					}
-				}
-				// 如果还需要其他的类型请自己做扩展
-			}
-			isentryClassMemberName=true;
-		} else {
-			System.err.println("object is null");
-		}
-		return list;
+	//数据库查询操作;
+	public List<?> update(int from, int maxLineATime) {
+		return MyHibernate.sqlQuery(from, maxLineATime, "from " + EntityClassName);
+	}
+	//带排序的数据库查询操作;
+	public List<?> update(int from, int maxLineATime, int upordown, String orderBy) {
+		if (upordown == 0)
+			return MyHibernate.sqlQuery(from, maxLineATime,
+					"from " + EntityClassName + " order by " + orderBy + " asc");
+		else
+			return MyHibernate.sqlQuery(from, maxLineATime,
+					"from " + EntityClassName + " order by " + orderBy + " desc");
 	}
 
-	// 把一个字符串的第一个字母大写;
-	private static String getMethodName(String fildeName) throws Exception {
-		if (fildeName.charAt(0) >= 'a' && fildeName.charAt(0) <= 'z') {
-			byte[] items = fildeName.getBytes();
-			items[0] = (byte) ((char) items[0] - 'a' + 'A');
-			return new String(items);
-		} else {
-			return fildeName;
-		}
+	//获取窗口的标题;
+	public String getTableTitle() {
+		return TableTitle;
 	}
-
+	//设置窗口的标题;	
+	public void setTableTitle(String tableTitle) {
+		TableTitle = tableTitle;
+	}
+	//设置窗口的大小;
+	public void setTableWindowSize(int width,int height){
+		TableWindowsWidth=width;
+		TableWindowsHeight=height;
+	}
+	//获取每次查询最大条数,也是每一页显示条数;
+	public int getMaxLineATime() {
+		return maxLineATime;
+	}
+	//设置每次查询最大条数,也是每一页显示条数;
+	public void setMaxLineATime(int maxLineATime) {
+		this.maxLineATime = maxLineATime;
+	}
+	
 	@Override
 	public void mousePressed(MouseEvent e) {
 		// TODO Auto-generated method stub
