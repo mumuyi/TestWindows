@@ -346,7 +346,7 @@ public class TableWindowsFactory implements ActionListener, MouseListener {
 			System.out.println("在这里进行删除操作");
 
 			//添加一个确认框;
-			int option=JOptionPane.showConfirmDialog( null , "你确定要删除所选择的数据吗" , "提示", JOptionPane.YES_NO_OPTION ) ;
+			int option=JOptionPane.showConfirmDialog( null , "确定删除选择的 "+delList.size()+" 条数据吗" , "提示", JOptionPane.YES_NO_OPTION ) ;
 			if(option==0){
 				// 删除delList中的对应的sqlList中的对象;
 				for (int i = 0; i < delList.size(); i++) {

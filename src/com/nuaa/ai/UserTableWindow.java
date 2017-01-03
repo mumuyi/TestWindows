@@ -9,7 +9,7 @@ public class UserTableWindow implements TableWindows{
 	public void iniTable(){
 		UserTableWindow utw=new UserTableWindow();
 		String[] Titles = {"编号","用户ID", "用户名称","电话","选择"};
-		List<?> list = (List<?>)MyHibernate.sqlQuery(0, 4,"from User");
+		List<?> list = (List<?>)MyHibernate.sqlQuery(0, maxLineATime,"from User");
 		TableWindowsFactory table=new TableWindowsFactory("User Table",Titles,list,utw,MyHibernate.sqlGetRecordNum("select count(*) from User"),maxLineATime);
 		table.showTable();
 	}

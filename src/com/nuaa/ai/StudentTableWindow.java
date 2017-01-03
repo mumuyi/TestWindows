@@ -9,7 +9,7 @@ public class StudentTableWindow implements TableWindows{
 	public void iniTable(){
 		StudentTableWindow utw=new StudentTableWindow();
 		String[] Titles = { "±àºÅ","ID", "Name","Ñ¡Ôñ" };
-		List<?> list = (List<?>)MyHibernate.sqlQuery(0, 4,"from Student");
+		List<?> list = (List<?>)MyHibernate.sqlQuery(0, maxLineATime,"from Student");
 		TableWindowsFactory table=new TableWindowsFactory("Student Table",Titles,list,utw,MyHibernate.sqlGetRecordNum("select count(*) from Student"),maxLineATime);
 		table.showTable();
 	}
