@@ -4,37 +4,29 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.ImageObserver;
 import java.io.IOException;
-import java.text.AttributedCharacterIterator;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
 import com.nuaa.ai.DynamicData.DemoPanel.MyThread;
 
-public class MainWindows extends JFrame {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	private static JFrame jf;
+public class MainWindows{
+	private static JFrame jf=new JFrame();
 	private static MainWindows mw;
 
 	public static JPanel GImage = null; 
@@ -46,8 +38,14 @@ public class MainWindows extends JFrame {
 	
 	public static void main(String[] args) throws IOException {
 		mw = new MainWindows();
-		jf = mw.launchFrame();
+
 		mw.MaxFrame(jf);
+		//添加菜单栏;
+		mw.addMenu();
+		//设置可见性;
+		jf.setVisible(true);
+		
+		jf.setTitle("   卫星健康监控系统");
 		
 		Dimension d = jf.getSize();
 		WindowsWidth = (int) d.getWidth();
@@ -57,7 +55,12 @@ public class MainWindows extends JFrame {
 		
         // 利用JPanel添加背景图片  
         GImage = new JPanel() {  
-            protected void paintComponent(Graphics g) {  
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = -6668680529227025511L;
+
+			protected void paintComponent(Graphics g) {  
                 ImageIcon icon = new ImageIcon("F:/Java/TestWindows/image/background.jpg");  
                 Image img = icon.getImage();  
                 g.drawImage(img, 0, 0, WindowsWidth,  
@@ -67,6 +70,7 @@ public class MainWindows extends JFrame {
         jf.add(GImage);
         //jf.getLayeredPane().add(GImage, new Integer(100));
         
+		
 		// 显示图片;
 		ImageIcon imagetoshow = new ImageIcon("F:/Java/TestWindows/image/image1.jpg");
 		JLabel showimagelabel = new JLabel(imagetoshow);
@@ -95,9 +99,9 @@ public class MainWindows extends JFrame {
 			public void mouseEntered(MouseEvent e) {
 				System.out.println("鼠标进入" + count);
 				// 显示信息;
-				//int showX = showimagelabel.getX();
-				//int showY = showimagelabel.getY();
-				//label = mw.showInformation(showX, showY);
+				int showX = showimagelabel.getX();
+				int showY = showimagelabel.getY();
+				label = mw.showInformation(showX, showY);
 			}
 
 			public void mouseClicked(MouseEvent e) {
@@ -105,29 +109,11 @@ public class MainWindows extends JFrame {
 					System.out.println("鼠标被双击了");
 				} else {
 					System.out.println("鼠标被点击" + mouseCount++);
+					//测试动态折线图;
 					//DataWindow.showMyData();
 					//DynamicData.showDynamicData();
-					
+										
 					//测试轨道;
-					//int radii=300;
-					//int Ovalx=WindowsWidth/2;
-					//int Ovaly=WindowsHeight/2;
-					//mw.Simulationsatellite(Ovalx,Ovaly,radii,0);
-
-					//测试表格显示;
-					//StudentTableWindow stw=new StudentTableWindow();
-					//stw.iniTable();
-					//UserTableWindow utw=new UserTableWindow();
-					//utw.iniTable();
-					
-					//数据库测试;
-					//User user=new User();
-					//user.setUserId("1111");
-					//user.setUserName("王二二二");
-					//user.setUserPhone("1234455667");
-					//MyHibernate.sqlSaveOrUpdate(user);
-					//MyHibernate.sqlDelete(user);
-					
 					//MyThread2 myThread1;
 					//myThread1=new MyThread2();
 					//myThread1.start();
@@ -138,36 +124,23 @@ public class MainWindows extends JFrame {
 			public void mouseExited(MouseEvent e) {
 				System.out.println("鼠标移出" + count++);
 				//隐藏信息;
-				//jf.remove(label);
-				//jf.getLayeredPane().remove(label);
-				//jf.repaint();
+				jf.remove(label);
+				jf.getLayeredPane().remove(label);
+				jf.repaint();
 			}
 		});
 		
 		
+		
+		
 		//设置窗口关闭事件;
-		mw.addWindowListener(new WindowAdapter() {  
+		jf.addWindowListener(new WindowAdapter() {  
 			public void windowClosing(WindowEvent e) {  
 				super.windowClosing(e);  
 				//加入动作  
 				System.exit(0);
 			 }		  
 			});
-
-		
-		
-		
-		
-		
-		
-		
-	}
-
-	public JFrame launchFrame() {
-		//this.setSize(300, 300);// 设置宽度和高度
-		//this.setLocation(300, 266);// 设置初始位置
-		this.setVisible(true);// 设置可见
-		return this;
 	}
 
 	public void MaxFrame(JFrame jf) {
@@ -284,7 +257,23 @@ public class MainWindows extends JFrame {
 		}
 	}
 	
-	
+	private void addMenu(){
+		//顶部菜单方式;
+		JMenu jm = new JMenu("File"); // 创建JMenu菜单对象
+		JMenuItem t1 = new JMenuItem("item1"); // 菜单项
+		JMenuItem t2 = new JMenuItem("item2");// 菜单项
+		JMenu jm1 = new JMenu("File"); // 创建JMenu菜单对象
+		JMenuItem t11 = new JMenuItem("item1"); // 菜单项
+		JMenuItem t21 = new JMenuItem("item2");// 菜单项
+		jm.add(t1); //将菜单项目添加到菜单
+		jm.add(t2) ; //将菜单项目添加到菜单
+		jm1.add(t11); //将菜单项目添加到菜单
+		jm1.add(t21) ; //将菜单项目添加到菜单
+		JMenuBar br = new JMenuBar(); // 创建菜单工具栏
+		br.add(jm) ; //将菜单增加到菜单工具栏
+		br.add(jm1) ; //将菜单增加到菜单工具栏
+		jf.setJMenuBar(br) ; //为 窗体设置 菜单工具栏
+	}
 	
 	
 }
