@@ -26,16 +26,8 @@ public class DataWindow {
 
 	DateFormat fmt = DateFormat.getDateTimeInstance();
 
-	public static void showMyData() {
-		DataWindow showd = new DataWindow();
-
-		showd.createChart();
-
-		showd.DrawMyPireChar();
-	}
-
 	//绘制饼状图;
-	public void DrawMyPireChar() {
+	private void DrawMyPireChar() {
 
 		DefaultPieDataset dpd = new DefaultPieDataset(); // 建立一个默认的饼图
 		dpd.setValue("test1", 25); // 输入数据 dpd.setValue("test2", 25);
@@ -55,8 +47,26 @@ public class DataWindow {
 
 	}
 
+	public JFreeChart getPireChar(){
+		DefaultPieDataset dpd = new DefaultPieDataset(); // 建立一个默认的饼图
+		dpd.setValue("test1", 25); // 输入数据 dpd.setValue("test2", 25);
+		dpd.setValue("test3", 30);
+		dpd.setValue("test4", 10);
+
+		return ChartFactory.createPieChart("data show", dpd, true, true, false); 
+	}
+	
+	
+	public void showPireChar(){
+		//showd.createChart();
+		DrawMyPireChar();
+		createChart();
+	}
+	
+	
+	
 	// 获得数据集 （这里的数据是为了测试我随便写的一个自动生成数据的例子）
-	public DefaultCategoryDataset createDataset() {
+	private DefaultCategoryDataset createDataset() {
 		DefaultCategoryDataset linedataset = new DefaultCategoryDataset();
 		// 曲线名称
 		String series = " glucose"; // series指的就是报表里的那条数据线
@@ -85,7 +95,7 @@ public class DataWindow {
 	 * 整个大的框架属于JFreeChart
 	 * 坐标轴里的属于 Plot 其常用子类有：CategoryPlot, MultiplePiePlot, PiePlot , XYPlot
 	 */
-	public void createChart() {
+	private void createChart() {
 
 		// 定义图标对象
 		JFreeChart chart = ChartFactory.createLineChart(null, // 报表题目，字符串类型

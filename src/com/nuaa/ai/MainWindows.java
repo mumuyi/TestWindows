@@ -23,7 +23,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
-import com.nuaa.ai.DynamicData.DemoPanel.MyThread;
 
 public class MainWindows{
 	private static JFrame jf=new JFrame();
@@ -109,9 +108,11 @@ public class MainWindows{
 					System.out.println("鼠标被双击了");
 				} else {
 					System.out.println("鼠标被点击" + mouseCount++);
-					//测试动态折线图;
-					//DataWindow.showMyData();
-					//DynamicData.showDynamicData();
+					//测试饼状图和动态折线图;
+					//DataWindow dw=new DataWindow();
+					//dw.showPireChar();
+					//DynamicData ayd=new DynamicData();
+					//ayd.showDynamicData("DynamicData window");
 										
 					//测试轨道;
 					//MyThread2 myThread1;
